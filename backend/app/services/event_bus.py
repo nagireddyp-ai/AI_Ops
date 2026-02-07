@@ -1,15 +1,27 @@
 import asyncio
-from typing import AsyncGenerator, Dict
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Dict, List
 
 
 class EventBus:
     def __init__(self) -> None:
-        self._queue: asyncio.Queue[Dict] = asyncio.Queue()
+        self._subscribers: List[asyncio.Queue[Dict]] = []
 
     async def publish(self, event: Dict) -> None:
-        await self._queue.put(event)
+        for queue in list(self._subscribers):
+            await queue.put(event)
 
-    async def stream(self) -> AsyncGenerator[Dict, None]:
-        while True:
-            event = await self._queue.get()
-            yield event
+    @asynccontextmanager
+    async def subscribe(self) -> AsyncGenerator[AsyncGenerator[Dict, None], None]:
+        queue: asyncio.Queue[Dict] = asyncio.Queue()
+        self._subscribers.append(queue)
+
+        async def generator() -> AsyncGenerator[Dict, None]:
+            while True:
+                event = await queue.get()
+                yield event
+
+        try:
+            yield generator()
+        finally:
+            self._subscribers.remove(queue)

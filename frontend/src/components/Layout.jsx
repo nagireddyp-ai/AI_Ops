@@ -10,14 +10,19 @@ const Layout = ({ children }) => {
 
   useEffect(() => {
     let socket;
-    api.listAgents().then(setAgents).catch(() => setAgents([]));
+    const loadAgents = () => api.listAgents().then(setAgents).catch(() => setAgents([]));
+    loadAgents();
     socket = connectEventStream((event) => {
       setEvents((prev) => [event, ...prev].slice(0, 12));
       if (event.event?.includes("incident")) {
         setTicker((prev) => [event, ...prev].slice(0, 8));
       }
     });
-    return () => socket?.close();
+    const interval = setInterval(loadAgents, 15000);
+    return () => {
+      clearInterval(interval);
+      socket?.close();
+    };
   }, []);
 
   return (

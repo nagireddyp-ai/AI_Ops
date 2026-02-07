@@ -2,7 +2,9 @@ from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import agents, chat, incidents, kb, logs, simulation, sla, servicenow
+from app.rag.service import RAGService
 from app.services.event_bus import EventBus
+from app.simulation.controller import SimulationController
 from app.state import AppState
 
 
@@ -18,6 +20,8 @@ def create_app() -> FastAPI:
 
     app.state.state = AppState()
     app.state.bus = EventBus()
+    app.state.state.simulation = SimulationController(app.state.state, app.state.bus)
+    app.state.state.rag = RAGService()
 
     app.include_router(incidents.router, prefix="/api/incidents", tags=["incidents"])
     app.include_router(simulation.router, prefix="/api/simulation", tags=["simulation"])
@@ -31,8 +35,9 @@ def create_app() -> FastAPI:
     @app.websocket("/ws/events")
     async def events_socket(websocket: WebSocket) -> None:
         await websocket.accept()
-        async for event in app.state.bus.stream():
-            await websocket.send_json(event)
+        async with app.state.bus.subscribe() as stream:
+            async for event in stream:
+                await websocket.send_json(event)
 
     return app
 

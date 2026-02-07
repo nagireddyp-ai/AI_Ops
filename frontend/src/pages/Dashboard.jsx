@@ -26,6 +26,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     refresh();
+    const interval = setInterval(refresh, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleSimulate = async () => {

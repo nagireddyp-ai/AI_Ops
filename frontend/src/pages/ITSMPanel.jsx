@@ -7,6 +7,8 @@ const ITSMPanel = () => {
   const [selected, setSelected] = useState(null);
   const [status, setStatus] = useState("in_progress");
   const [engineer, setEngineer] = useState("Alex Morgan");
+  const [logs, setLogs] = useState([]);
+  const [ragSuggestion, setRagSuggestion] = useState(null);
 
   const refresh = async () => {
     const data = await api.listIncidents();
@@ -47,6 +49,20 @@ const ITSMPanel = () => {
       status,
       notes: "Updated via ITSM panel",
     });
+  };
+
+  const handleViewLogs = async () => {
+    if (!selected) return;
+    const data = await api.listLogs(selected.id);
+    setLogs(data);
+  };
+
+  const handleRagSuggestion = async () => {
+    if (!selected) return;
+    const response = await api.chat({
+      question: `Suggest remediation for ${selected.title} (${selected.severity})`,
+    });
+    setRagSuggestion(response);
   };
 
   return (
@@ -99,7 +115,34 @@ const ITSMPanel = () => {
                 <button onClick={handleUpdate}>Update Status</button>
                 <button onClick={handleResolve}>Resolve Ticket</button>
                 <button onClick={handleServiceNow}>Sync ServiceNow</button>
+                <button onClick={handleViewLogs}>View Logs</button>
+                <button onClick={handleRagSuggestion}>View RAG Suggestions</button>
               </div>
+            </div>
+          )}
+        </section>
+        <section>
+          <h2>Incident Logs</h2>
+          {logs.length === 0 ? (
+            <p>No logs loaded.</p>
+          ) : (
+            <ul>
+              {logs.map((log) => (
+                <li key={log.id}>
+                  <strong>{log.level}</strong> {log.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section>
+          <h2>RAG Suggestions</h2>
+          {!ragSuggestion ? (
+            <p>Run suggestions to see guidance.</p>
+          ) : (
+            <div className="card">
+              <p>{ragSuggestion.answer}</p>
+              <small>Sources: {ragSuggestion.sources.join(", ")}</small>
             </div>
           )}
         </section>

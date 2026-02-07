@@ -21,8 +21,9 @@ export const api = {
     });
     return response.json();
   },
-  async listLogs() {
-    const response = await fetch(`${BASE_URL}/api/logs/`);
+  async listLogs(incidentId) {
+    const query = incidentId ? `?incident_id=${incidentId}` : "";
+    const response = await fetch(`${BASE_URL}/api/logs/${query}`);
     return response.json();
   },
   async createLog(payload) {
@@ -54,6 +55,14 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(query),
+    });
+    return response.json();
+  },
+  async embedKnowledge(payload) {
+    const response = await fetch(`${BASE_URL}/api/kb/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
     return response.json();
   },

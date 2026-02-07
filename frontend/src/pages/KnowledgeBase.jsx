@@ -30,13 +30,25 @@ const KnowledgeBase = () => {
     refresh();
   };
 
+  const handleEmbed = async () => {
+    if (articles.length === 0) return;
+    await api.embedKnowledge({
+      ids: articles.map((article) => article.id),
+      documents: articles.map((article) => `${article.title}\n${article.content}`),
+      metadata: articles.map((article) => ({
+        incident_id: article.incident_id,
+        tags: article.tags,
+      })),
+    });
+  };
+
   return (
     <div>
       <div className="page-header">
         <h1>Knowledge Base</h1>
         <div className="actions">
           <button onClick={handleCreate}>Regenerate Article</button>
-          <button onClick={() => api.simulationCommand("embed_kb")}>Embed into RAG</button>
+          <button onClick={handleEmbed}>Embed into RAG</button>
         </div>
       </div>
       <div className="filters">

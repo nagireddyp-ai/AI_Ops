@@ -18,6 +18,12 @@ class KnowledgeCreate(BaseModel):
     incident_id: str
 
 
+class EmbedRequest(BaseModel):
+    ids: List[str]
+    documents: List[str]
+    metadata: List[dict]
+
+
 @router.get("/", response_model=List[KnowledgeArticle])
 async def list_articles(request: Request) -> List[KnowledgeArticle]:
     state = request.app.state.state
@@ -41,3 +47,11 @@ async def create_article(payload: KnowledgeCreate, request: Request) -> Knowledg
     state.knowledge_base[article.id] = article
     await request.app.state.bus.publish({"event": "kb_created", "data": article.model_dump()})
     return article
+
+
+@router.post("/embed")
+async def embed_articles(payload: EmbedRequest, request: Request) -> dict:
+    rag = request.app.state.state.rag
+    rag.embed_documents(payload.ids, payload.documents, payload.metadata)
+    await request.app.state.bus.publish({"event": "kb_embedded", "data": {"count": len(payload.ids)}})
+    return {"status": "embedded", "count": len(payload.ids)}

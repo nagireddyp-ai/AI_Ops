@@ -17,8 +17,11 @@ class LogCreate(BaseModel):
 
 
 @router.get("/", response_model=List[LogEntry])
-async def list_logs(request: Request) -> List[LogEntry]:
-    return request.app.state.state.logs
+async def list_logs(request: Request, incident_id: str | None = None) -> List[LogEntry]:
+    logs = request.app.state.state.logs
+    if incident_id:
+        return [log for log in logs if log.incident_id == incident_id]
+    return logs
 
 
 @router.post("/", response_model=LogEntry)

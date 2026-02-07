@@ -31,6 +31,7 @@ async def create_incident(payload: IncidentCreate, request: Request) -> Incident
     )
     state = request.app.state.state
     state.incidents[incident.id] = incident
+    state.sla_timers[incident.id] = 45
     await request.app.state.bus.publish({"event": "incident_created", "data": incident.model_dump()})
     return incident
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -14,8 +14,7 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/query", response_model=ChatResponse)
-async def chat_query(payload: ChatQuery) -> ChatResponse:
-    return ChatResponse(
-        answer=f"RAG placeholder response for: {payload.question}",
-        sources=["incidents", "knowledge_base", "logs"],
-    )
+async def chat_query(payload: ChatQuery, request: Request) -> ChatResponse:
+    rag = request.app.state.state.rag
+    result = rag.query(payload.question)
+    return ChatResponse(answer=result.answer, sources=result.sources)
